@@ -80,6 +80,13 @@ function getOrder() {
     });
 }
 
+function Product(id, name, price, stockQty, qtyToBuy) {
+  this.item_id = id;
+  this.product_name = name;
+  this.price = price;
+  this.stock_quanttity = stockQty;
+  this.quantityToBuy = qtyToBuy;
+}
 function getItem(itemId, qty) {
   var sqlQuery =
     'SELECT item_id, product_name, price, stock_quantity FROM products WHERE item_id = ' +
@@ -91,9 +98,14 @@ function getItem(itemId, qty) {
     if (err) throw err;
 
     if (res.length > 0) {
-      console.log('res[0].Price:' + res[0].price);
-      var itemsRemaining = res[0].stock_quantity - qty;
-      updateProducts(res[0].item_id, itemsRemaining);
+      var item = new Product(
+        res[0].item_id,
+        res[0].product_name,
+        res[0].price,
+        res[0].stock_quantity,
+        qty
+      );
+      updateProducts(item);
     } else {
       console.log('\nInsufficient Quantity!\n');
       isBuying('Do you want to buy something else then?');
@@ -101,22 +113,23 @@ function getItem(itemId, qty) {
   });
 }
 
-function updateProducts(item, qty, func) {
+function updateProducts(product) {
+  var newQty = product.stock_quantity - product.qtyToBuy;
   connection.query(
     'UPDATE products SET ? WHERE ?',
     [
       {
-        stock_quantity: qty
+        stock_quantity: newQty
       },
       {
-        item_id: item
+        item_id: item.item_id
       }
     ],
     function(err, res) {
       if (err) throw err;
-
       console.log(res.affectedRows + ' products updated!\n');
-      // Call deleteProduct AFTER the UPDATE completes
+
+      showReceipt(product);
     }
   );
 }
