@@ -13,45 +13,40 @@ var connection = mysql.createConnection({
 connection.connect(function(err) {
   if (err) throw err;
   console.log('connected to MySQL as id ' + connection.threadId);
-  isBuying();
-  // connection.end();
+  isBuying('Do you want to buy something?');
 });
 
 function showProducts(func) {
-  var query = connection.query(
-    'SELECT item_id, product_name, price, stock_quantity FROM products WHERE stock_quantity > 0',
-    function(err, res) {
-      if (err) throw err;
-      console.log(
-        '\n----------------------------------------------------------- B A M A Z O N -----------------------------------------------------'
-      );
-      console.log(
-        '-------------------------------------------------------------------------------------------------------------------------------\n'
-      );
+  var sqlQuery =
+    "SELECT item_id AS 'Item ID', product_name AS Product, Price, stock_quantity AS 'Quantity in Stock' FROM products WHERE stock_quantity > 0";
+  connection.query(sqlQuery, function(err, res) {
+    if (err) throw err;
+    console.log(
+      '\n----------------------------------------------------------- B A M A Z O N -----------------------------------------------------'
+    );
+    console.log(
+      '-------------------------------------------------------------------------------------------------------------------------------\n'
+    );
 
-      console.table(res);
-      console.log(res[0].price);
-      console.log(query._results[0][0].price);
-      func();
-    }
-  );
+    console.table(res);
+    func();
+  });
 }
 
-function isBuying() {
+function isBuying(msg) {
   inquirer
     .prompt([
       {
         type: 'confirm',
         name: 'wantsToBuy',
-        message: 'Do you want to buy something?'
+        message: msg
       }
     ])
     .then(function(user) {
       if (user.wantsToBuy == true) {
         showProducts(getOrder);
       } else {
-        connection.end();
-        console.log('connection ended');
+        exitApp();
       }
     });
 }
@@ -61,19 +56,49 @@ function getOrder() {
     .prompt([
       {
         type: 'input',
-        name: 'itemId',
+        name: 'id',
         message: 'Enter item id of product: '
       },
       {
         type: 'input',
         name: 'quantity',
         message: 'Enter quantity to buy: '
+      },
+      {
+        type: 'confirm',
+        name: 'correct',
+        message: 'Is this correct?'
       }
     ])
     .then(function(product) {
-      console.log(product.itemId, product.quantity);
-      connection.end();
+      if (product.correct == true) {
+        console.log(product.id, product.quantity);
+        getItem(product.id, product.quantity);
+      } else {
+        getOrder();
+      }
     });
+}
+
+function getItem(itemId, qty) {
+  var sqlQuery =
+    'SELECT item_id, product_name, price, stock_quantity FROM products WHERE item_id = ' +
+    itemId +
+    ' AND stock_quantity >= ' +
+    qty;
+
+  connection.query(sqlQuery, function(err, res) {
+    if (err) throw err;
+
+    if (res.length > 0) {
+      console.log('res[0].Price:' + res[0].price);
+      var itemsRemaining = res[0].stock_quantity - qty;
+      updateProducts(res[0].item_id, itemsRemaining);
+    } else {
+      console.log('\nInsufficient Quantity!\n');
+      isBuying('Do you want to buy something else then?');
+    }
+  });
 }
 
 function updateProducts(item, qty, func) {
@@ -88,8 +113,15 @@ function updateProducts(item, qty, func) {
       }
     ],
     function(err, res) {
+      if (err) throw err;
+
       console.log(res.affectedRows + ' products updated!\n');
       // Call deleteProduct AFTER the UPDATE completes
     }
   );
+}
+
+function exitApp() {
+  connection.end();
+  console.log('\nApplication Terminated\n');
 }
