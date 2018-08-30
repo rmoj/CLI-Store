@@ -13,7 +13,8 @@ var connection = mysql.createConnection({
 connection.connect(function(err) {
   if (err) throw err;
   console.log('connected to MySQL as id ' + connection.threadId);
-  isBuying('Do you want to buy something?');
+  console.log('\nWelcome to B A M A Z O N');
+  isBuying('\nDo you want to buy something?');
 });
 
 function showProducts(func) {
@@ -75,9 +76,9 @@ function getOrder() {
       if (
         reg.test(product.id) &&
         reg.test(product.quantity) &&
+        product.quantity > 0 &&
         product.correct === true
       ) {
-        console.log(product.id, product.quantity);
         getItem(product.id, product.quantity);
       } else {
         getOrder();
@@ -93,12 +94,12 @@ function Product(id, name, price, stockQty, qtyToBuy) {
   this.quantityToBuy = qtyToBuy;
 }
 
-function getItem(itemId, qty) {
+function getItem(itemId, qtyToBuy) {
   var sqlQuery =
     'SELECT item_id, product_name, price, stock_quantity FROM products WHERE item_id = ' +
     itemId +
     ' AND stock_quantity >= ' +
-    qty;
+    qtyToBuy;
 
   connection.query(sqlQuery, function(err, res) {
     if (err) throw err;
@@ -109,10 +110,9 @@ function getItem(itemId, qty) {
         res[0].product_name,
         res[0].price,
         res[0].stock_quantity,
-        qty
+        qtyToBuy
       );
-      // updateProducts(item);
-      showReceipt(item);
+      updateProducts(item);
     } else {
       console.log('\nInsufficient Quantity!\n');
       isBuying('Do you want to buy something else then?');
@@ -121,7 +121,7 @@ function getItem(itemId, qty) {
 }
 
 function updateProducts(product) {
-  var newQty = product.stock_quantity - product.qtyToBuy;
+  var newQty = product.stock_quantity - product.quantityToBuy;
   connection.query(
     'UPDATE products SET ? WHERE ?',
     [
@@ -129,7 +129,7 @@ function updateProducts(product) {
         stock_quantity: newQty
       },
       {
-        item_id: item.item_id
+        item_id: product.item_id
       }
     ],
     function(err, res) {
