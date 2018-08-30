@@ -22,10 +22,10 @@ function showProducts(func) {
   connection.query(sqlQuery, function(err, res) {
     if (err) throw err;
     console.log(
-      '\n----------------------------------------------------------- B A M A Z O N -----------------------------------------------------'
+      '\n-------------------------------------------- B A M A Z O N --------------------------------------'
     );
     console.log(
-      '-------------------------------------------------------------------------------------------------------------------------------\n'
+      '-------------------------------------------------------------------------------------------------\n'
     );
 
     console.table(res);
@@ -71,7 +71,12 @@ function getOrder() {
       }
     ])
     .then(function(product) {
-      if (product.correct == true) {
+      var reg = new RegExp('^[0-9]+$');
+      if (
+        reg.test(product.id) &&
+        reg.test(product.quantity) &&
+        product.correct === true
+      ) {
         console.log(product.id, product.quantity);
         getItem(product.id, product.quantity);
       } else {
@@ -84,9 +89,10 @@ function Product(id, name, price, stockQty, qtyToBuy) {
   this.item_id = id;
   this.product_name = name;
   this.price = price;
-  this.stock_quanttity = stockQty;
+  this.stock_quantity = stockQty;
   this.quantityToBuy = qtyToBuy;
 }
+
 function getItem(itemId, qty) {
   var sqlQuery =
     'SELECT item_id, product_name, price, stock_quantity FROM products WHERE item_id = ' +
@@ -105,7 +111,8 @@ function getItem(itemId, qty) {
         res[0].stock_quantity,
         qty
       );
-      updateProducts(item);
+      // updateProducts(item);
+      showReceipt(item);
     } else {
       console.log('\nInsufficient Quantity!\n');
       isBuying('Do you want to buy something else then?');
@@ -132,6 +139,26 @@ function updateProducts(product) {
       showReceipt(product);
     }
   );
+}
+
+function showReceipt(prod) {
+  console.log('\nB A M A Z O N\n');
+  console.log('*** Official Receipt ***\nThank you for shooping.\n');
+
+  var total = parseFloat(prod.quantityToBuy) * parseFloat(prod.price);
+
+  var purchased = [
+    {
+      quantity: prod.quantityToBuy,
+      item: prod.product_name,
+      price: prod.price,
+      total: total.toFixed(2)
+    }
+  ];
+
+  console.table(purchased);
+
+  isBuying('Do you want to purchase another item?');
 }
 
 function exitApp() {
