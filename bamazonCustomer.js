@@ -73,17 +73,18 @@ function getOrder() {
     ])
     .then(function(product) {
       var reg = new RegExp('^[0-9]+$');
+      var prodId = product.id.trim();
+      var prodQty = product.quantity.trim();
       if (
-        reg.test(product.id.trim()) &&
-        reg.test(product.quantity.trim()) &&
-        product.quantity > 0 &&
+        reg.test(prodId) &&
+        reg.test(prodQty) &&
+        parseInt(prodQty) > 0 &&
         product.correct === true
       ) {
-        getItem(product.id, product.quantity);
+        getItem(prodId, prodQty);
       } else {
-        if ((reg.test(product.id) || reg.test(product.quantity)) === false) {
-          console.log('\nInvalid entry.\n');
-        }
+        console.log('\nPlease try again.\n');
+
         isBuying('Are you interested in buying something?');
       }
     });
@@ -166,5 +167,5 @@ function showReceipt(prod) {
 
 function exitApp() {
   connection.end();
-  console.log('\nApplication Terminated\n');
+  console.log('\nThank you for visiting Bamazon.\n');
 }
