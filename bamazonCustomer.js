@@ -12,9 +12,9 @@ var connection = mysql.createConnection({
 
 connection.connect(function(err) {
   if (err) throw err;
-  console.log('connected to MySQL as id ' + connection.threadId);
-  console.log('\nWelcome to B A M A Z O N');
-  isBuying('\nDo you want to buy something?');
+  console.log('\nconnected to MySQL as id ' + connection.threadId);
+  console.log('\nWelcome to B A M A Z O N\n');
+  isBuying('Do you want to buy something?');
 });
 
 function showProducts(func) {
@@ -74,14 +74,17 @@ function getOrder() {
     .then(function(product) {
       var reg = new RegExp('^[0-9]+$');
       if (
-        reg.test(product.id) &&
-        reg.test(product.quantity) &&
+        reg.test(product.id.trim()) &&
+        reg.test(product.quantity.trim()) &&
         product.quantity > 0 &&
         product.correct === true
       ) {
         getItem(product.id, product.quantity);
       } else {
-        getOrder();
+        if ((reg.test(product.id) || reg.test(product.quantity)) === false) {
+          console.log('\nInvalid entry.\n');
+        }
+        isBuying('Are you interested in buying something?');
       }
     });
 }
@@ -143,7 +146,7 @@ function updateProducts(product) {
 
 function showReceipt(prod) {
   console.log('\nB A M A Z O N\n');
-  console.log('*** Official Receipt ***\nThank you for shooping.\n');
+  console.log('*** Official Receipt ***\nThank you for shopping.\n');
 
   var total = parseFloat(prod.quantityToBuy) * parseFloat(prod.price);
 
